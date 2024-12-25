@@ -5,6 +5,15 @@ import time
 from dotenv import load_dotenv, find_dotenv
 from authlib.integrations.requests_client import OAuth2Session
 
+"""
+Submit solution.
+
+`python3 submit.py year day answer` to submit answer on aoc website for
+the corresponding day and year. Automatically checks for current level
+being solved.
+Outputs a verdict: correct, too low, too many requests, etc...
+"""
+
 
 load_dotenv()
 session_id = os.getenv('AOC_SESSION')

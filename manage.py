@@ -6,6 +6,13 @@ from dotenv import load_dotenv, find_dotenv
 from authlib.integrations.requests_client import OAuth2Session
 
 
+"""
+Manage AoC code.
+- Create .ml files for each day: `python3 manage.py create [year]
+- Compile .ml file for a given day, execute it, and submit answer:
+  `python3 manage.py year day`. If no year or day is given, current date is used.
+"""
+
 load_dotenv()
 session_id = os.getenv('AOC_SESSION')
 

@@ -6,6 +6,16 @@ from dotenv import load_dotenv, find_dotenv
 from authlib.integrations.requests_client import OAuth2Session
 
 
+"""
+Download input.
+
+ `python3 download.py year day` to download corresponding day and
+store it in [year]/input/day_[day].txt, if file does not already exist.
+
+If no arguments are provided, current year and day will be used.
+"""
+
+
 year = None
 load_dotenv()
 session_id = os.getenv('AOC_SESSION')
