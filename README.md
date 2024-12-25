@@ -1,2 +1,10 @@
 # advent_of_code
-Advent of code
+Solutions for [Advent of Code](https://adventofcode.com/). Most days are done in OCaml and/or Python.
+
+# If you are a CS student 
+Most of the code here was most likely written between 6 and 9 a.m: I occasionally take the time to 
+go back and tidy it up (and comment it), but most of the code you'll find here is ugly and should
+NOT be taken as an example !!
+
+# If you are one of <em>my</em> students
+MP2 Tous des dieux !
