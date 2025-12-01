@@ -39,6 +39,8 @@ let _ = main ()"""
 
 
 def create_ml(year):
+    os.makedirs(f"{year}", exist_ok=False)
+    os.makedirs(f"{year}/input", exist_ok=False)
     for i in range(25):
         print("Creating", f"{year}/day_{i+1}.ml")
         with open(f"{year}/day_{i+1}.ml", "w") as f:
@@ -46,6 +48,10 @@ def create_ml(year):
 
 if __name__ == "__main__":
     argc = len(sys.argv)
+    if argc > 1 and sys.argv[1] == "help":
+        print("Usage: python manage.py YEAR DAY")
+        print("If no arguments are specified, current date is used")
+
     if argc == 3 and sys.argv[1] == "create":
         year = int(sys.argv[2])
         create_ml(year)
@@ -58,11 +64,15 @@ if __name__ == "__main__":
         year = int(sys.argv[1])
         day = int(sys.argv[2])
 
-    print(year, day)
     print("Compiling...")
-    os.system(f"ocamlc unix.cma advent_of_code.ml {year}/day_{day}.ml")
+    if os.system(f"ocamlc unix.cma advent_of_code.ml {year}/day_{day}.ml"):
+        exit(1)
     print("Executing...")
-    os.system("./a.out")
+    if os.system("./a.out"):
+        exit(1)
     print("Submitting...")
-    os.system(f"python3 submit.py {year} {day} bla.txt")
+    if os.system(f"python3 submit.py {year} {day} bla.txt"):
+        exit(1)
+    os.system(f"rm bla.txt")
+    os.system(f"rm a.out")
 
