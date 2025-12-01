@@ -64,6 +64,9 @@ if __name__ == "__main__":
         year = int(sys.argv[1])
         day = int(sys.argv[2])
 
+    os.system(f"rm bla.txt")
+    os.system(f"rm a.out")
+
     print("Compiling...")
     if os.system(f"ocamlc unix.cma advent_of_code.ml {year}/day_{day}.ml"):
         exit(1)
