@@ -33,12 +33,33 @@ let is_invalid k =
 let range (x, y) =
     List.init (y-x+1) (fun i -> i + x)
 
+
+(* Part 2 a bit faster: only math *)
+
+let rec pow x n = if n = 0 then 1 else pow (x*x) (n/2) * (if n mod 2 = 1 then x else 1)
+
+let is_invalid2 x =
+    let r = ref false in
+    let k = String.length (string_of_int x) in
+    let i = ref 1 in
+    let p10 = ref 10 in           (* 10 ^ i *)
+    let q10 = ref (pow 10 (k-1)) in (* 10 ^ (k-i) *)
+    while !i < k && not !r do
+        if k mod !i = 0 &&
+            x / !p10 + (x mod !p10) * !q10 = x then
+            r := true;
+        incr i;
+        p10 := !p10 * 10;
+        q10 := !q10 / 10
+    done;
+    !r
+
 let day_2 (data: string list) =
     data |> List.hd
     |> String.split_on_char ','
     |> List.map (String.split_on_char '-')
     |> List.map (fun (x::y::_) -> (int_of_string x, int_of_string y))
-    |> List.map range |> List.map (List.filter is_invalid) |> List.concat
+    |> List.map range |> List.map (List.filter is_invalid2) |> List.concat
     |> List.fold_left (+) 0
 
 
