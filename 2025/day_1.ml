@@ -1,10 +1,10 @@
-open Advent_of_code
+open Advent_of_code;;
 let test = false
 let data = get_input 2025 1
 
 (* Return number of times rotation sequence l from position p hits 0 *)
 let rec sum_rot (l: (bool*int) list) (p: int) =
-    mat ch l with 
+    match l with 
     | [] -> 0
     | (b, x) :: q -> sum_rot q ((((p + (if b then x else -x)) mod 100) + 100) mod 100) + 
         if b && p + x >= 100 then (p+x) / 100 
