@@ -23,12 +23,17 @@ def get_level(year, day):
     response = requests.post(uri,cookies={'session': session_id})
     if "The first half of this puzzle is complete!" in response.text:
         return 2
+    if "Both parts of this puzzle are complete!" in response.text:
+        return 0
     return 1
 
 
 
 def submit(year, day, answer):
     level = get_level(year, day)
+    if not level:
+        print("Both levels already complete")
+        return
 
     print(f"Submitting solution for level {level} of {year}/{day}...")
     uri = f'https://adventofcode.com/{year}/day/{day}/answer'
