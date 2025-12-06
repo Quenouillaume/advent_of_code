@@ -1,21 +1,91 @@
 
 open Advent_of_code;;
 let test = false
-let data = get_input 2025 6
+let data = try get_input 2025 6 with | _ -> []
+
+let expected = 3263827
+let tdata = String.split_on_char '\n'
+"123 328  51 64 
+ 45 64  387 23 
+  6 98  215 314
+*   +   *   +  "
+
+let subtotal nums ops j =
+    let n = Array.length nums in
+    let def, op = ops.(j) in
+    let res = ref def in
+    for i = 0 to n-1 do
+        res := op !res nums.(i).(j)
+    done;
+    !res
+    
+
+let total nums ops =
+    let m = Array.length ops in
+    let res = ref 0 in
+    for j = 0 to m-1 do
+        res := !res + subtotal nums ops j
+    done;
+    !res
+
+
+(* PART 2: encore des chiffres.... *)
+let get_op_pos ops =
+    let n = String.length ops in
+    let rec get_from i =
+        if i >= n then [n+1] else
+        if ops.[i] <> ' ' then i :: get_from (i+1)
+        else get_from (i+1)
+    in get_from 0
+
+let read_nums (nums: char array array) (op_pos: int) (next_op_pos: int) =
+    let n = Array.length nums in (* number of rows *)
+    let k = next_op_pos - op_pos - 1 in (* number of numbers to read *)
+    let res = Array.make k 0 in
+    for j = 0 to k-1 do
+         (* read kth column *)
+         for i = 0 to n-1 do
+             if nums.(i).(op_pos+j) <> ' ' then
+                 res.(j) <- 10 * res.(j) + int_of_char nums.(i).(op_pos+j) - int_of_char '0'
+         done;
+     done;
+     res
+      
+
+let vert_total nums ops =
+    let op_positions = get_op_pos ops |> Array.of_list in
+    let p = Array.length op_positions in
+    let total = ref 0 in
+    for i = 0 to p-2 do
+        let def, op = if ops.[op_positions.(i)] = '*' then (1, ( * )) else (0, ( + )) in
+        let vert_nums = read_nums nums op_positions.(i) op_positions.(i+1) in
+        let k = Array.length vert_nums in
+        let res = ref def in
+        for j = 0 to k-1 do
+            res := op !res vert_nums.(j)
+        done;
+        total := !total + !res
+    done;
+    !total
+    
+
+
+    
 
 let day_6 (data: string list) =
-    0
+    let ops :: nums = List.rev data in
+    let nums = nums |> List.rev |> List.map (String.to_seq) |> List.map (Array.of_seq)
+    |> Array.of_list
+    in
+    vert_total nums ops
 
 let main () =
-    let sol = if test then -1 else day_6 data in
-
-    if sol > 0 then begin
-        print_int sol; print_newline ();
-        write_solution sol
-    end	else if sol = 0 then
-        print_endline "Solution found is zero...
-"
-    else
-        print_endline "Test"
+    if day_6 tdata <> expected then begin
+        print_endline "Wrong answer on test";
+        exit 1
+    end else begin
+        let sol = day_6 data in 
+        write_solution sol;
+    end
 
 let _ = main ()
