@@ -50,7 +50,6 @@ let read_nums (nums: char array array) (op_pos: int) (next_op_pos: int) =
          done;
      done;
      res
-      
 
 let vert_total nums ops =
     let op_positions = get_op_pos ops |> Array.of_list in
@@ -68,6 +67,37 @@ let vert_total nums ops =
     done;
     !total
     
+      
+(* PART 2 in pure functional *)
+let rec transpose (ll: char list list) : char list list =
+    match ll with 
+    | [] -> []
+    | [] :: _ -> []
+    | _ -> (List.map List.hd ll) :: transpose (List.map List.tl ll)
+
+let read_space_int l = 
+    let s = l |> List.rev |> List.filter (fun c -> c <> ' ') |> List.to_seq |> String.of_seq in
+    if s = "" then None else Some (int_of_string s)
+
+(* Apply operator curr_op on curr list of numbers and on numbers read in l,
+   then keep computing operations in l *)
+let rec do_op (curr: int list) (curr_op: int * (int -> int -> int))  (l: char list list): int list =
+    match l with
+    | (c :: num) :: q when c <> ' ' ->
+        do_op [Option.get (read_space_int num)] (if c ='*' then (1, ( * )) else (0, (+))) q
+    | (num) :: q -> begin 
+        match read_space_int num with 
+        | None -> List.fold_left (snd curr_op) (fst curr_op) curr :: do_op [] curr_op q
+        | Some k -> do_op (k::curr) curr_op q
+        end
+    | [] -> List.fold_left (snd curr_op) (fst curr_op) curr :: []
+    
+let day_6_fun data =
+    data |> List.map String.to_seq |> List.map List.of_seq
+    |> transpose
+    |> List.map (List.rev)
+    |> do_op [] (0, (+)) |> List.fold_left (+) 0
+ 
 
 
     
@@ -80,11 +110,12 @@ let day_6 (data: string list) =
     vert_total nums ops
 
 let main () =
-    if day_6 tdata <> expected then begin
+    if day_6_fun tdata <> expected then begin
         print_endline "Wrong answer on test";
         exit 1
     end else begin
         let sol = day_6 data in 
+        print_int sol; print_newline();
         write_solution sol;
     end
 
