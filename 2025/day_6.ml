@@ -75,7 +75,8 @@ let rec transpose (ll: char list list) : char list list =
     | [] :: _ -> []
     | _ -> (List.map List.hd ll) :: transpose (List.map List.tl ll)
 
-let read_space_int l = 
+(* read l in reverse as an int, ignoring spaces.  *)
+let read_space_int (l: char list) : int option = 
     let s = l |> List.rev |> List.filter (fun c -> c <> ' ') |> List.to_seq |> String.of_seq in
     if s = "" then None else Some (int_of_string s)
 
