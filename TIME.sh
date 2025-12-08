@@ -1,7 +1,7 @@
 # Compute total time for solving AOC 
 
 echo > out_time.txt
-for (( i = 1; i <= 7; i++ )); do
+for (( i = 1; i <= 8; i++ )); do
 	ocamlc unix.cma advent_of_code.ml 2025/day_$i.ml -w -A
 	(time ./a.out) 2>> out_time.txt
 done
