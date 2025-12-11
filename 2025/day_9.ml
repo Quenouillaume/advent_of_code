@@ -14,9 +14,12 @@ let tdata = String.split_on_char '\n'
 7,3"
 let expected = 24
 
+(* upper triangle of cartesian products of l1, l2, i.e.
+   list of couples (x, y) in l1 x l2 where x < y *)
 let prod l1 l2 =
-    l1 |> List.map (fun x -> List.map (fun y -> (x, y)) l2) |> List.concat
+    l1 |> List.map (fun x -> List.map (fun y -> (x, y)) l2 |> List.filter (fun (x, y) -> x < y)) |> List.concat
 
+(* list of (x, y) where y appears just after x in l (cycling)*)
 let list_seqs l =
     let rec seqs_head l h =
     match l with 
@@ -34,8 +37,8 @@ let area (x1, y1) (x2, y2) =
 type position = 
     | Top | Bot | Left | Right  (* borders *)
     | Corner | Inside
-    | Above | Under | At_left | At_right 
-    | Away
+    | Above | Under | Left_of | Right_of (* outside rect but aligned *)
+    | Away (* not aligned with rect *)
 
 let is_conflict pos1 pos2 = 
     match pos1, pos2 with
@@ -45,8 +48,8 @@ let is_conflict pos1 pos2 =
     | a, b when a = b -> false
     | Top, Above | Above, Top
     | Bot, Under | Under, Bot
-    | Right, At_right | At_right, Right
-    | Left, At_left | At_left, Left
+    | Right, Right_of | Right_of, Right
+    | Left, Left_of | Left_of, Left
         -> false
     | _ -> true
 
@@ -70,8 +73,8 @@ let get_position (x1, y1) (x2, y2) (x3, y3) : position =
     if y3 = y1 && x1 <= x3 && x3 <= x2 then Top else
     if y3 = y2 && x1 <= x3 && x3 <= x2 then Bot else
     if intersect (x1, y1) (x2, y2) (x3, y3) then Inside else
-    if x3 < x1 && y1 < y3 && y3 < y2 then At_left else
-    if x3 > x2 && y1 < y3 && y3 < y2 then At_right else
+    if x3 < x1 && y1 < y3 && y3 < y2 then Left_of else
+    if x3 > x2 && y1 < y3 && y3 < y2 then Right_of else
     if y3 < y1 && x1 < x3 && x3 < x2 then Above else
     if y3 > y2 && x1 < x3 && x3 < x2 then Under else
     Away
@@ -109,8 +112,8 @@ let soft_intersect (x1, y1) (x2, y2) (x3, y3) : bool =
 let child_pos (x1, y1) (x2, y2) (x, y): int* int =
     let xm = (x2+x1) / 2 in
     let ym = (y2+y1) / 2 in
-    let i = if x < xm then 0 else 1 in
-    let j = if y < ym then 0 else 1 in
+    let i = if x <= xm then 0 else 1 in
+    let j = if y <= ym then 0 else 1 in
     i, j
 
 let subdiv (q: qt) = match q with
@@ -118,10 +121,10 @@ let subdiv (q: qt) = match q with
         let xm = (x2+x1) / 2 in
         let ym = (y2+y1) / 2 in
         let child i j =
-            let xa = if i = 0 then x1 else xm in
-            let xb = if i = 0 then xm-1 else x2 in
-            let ya = if j = 0 then y1 else ym in
-            let yb = if j = 0 then ym-1 else y2 in
+            let xa = if i = 0 then x1 else xm+1 in
+            let xb = if i = 0 then xm else x2 in
+            let ya = if j = 0 then y1 else ym+1 in
+            let yb = if j = 0 then ym else y2 in
             Leaf ((xa, ya), (xb, yb), 0, [])
         in 
         let children =
@@ -155,18 +158,57 @@ let rec insert (q: qt) ((x, y) as p: pt) : qt =
         children.(i).(j) <- insert children.(i).(j) (x, y);
         q
 
+let rec height (q: qt) =
+    match q with 
+    | Leaf _ -> 0
+    | Node (_, _, children) ->
+        let res = ref 0 in
+        Array.iter (Array.iter (fun q' -> let h = height q' in if h > !res then res := h)) children;
+        !res + 1
+
+let rec leaves (q: qt) =
+    match q with 
+    | Leaf _ -> 1
+    | Node (_, _, children) ->
+        let res = ref 0 in
+        Array.iter (Array.iter (fun q' -> let f = leaves q' in res := !res + f)) children;
+        !res + 1
+
+let rec print_qtree (q: qt) (prefix: string) =
+    match q with
+    | Leaf ((x1, y1), (x2, y2), n, l) ->
+        print_string prefix; 
+        Printf.printf "Leaf [%d-%d, %d-%d]: " x1 x2 y1 y2;
+        List.iter (fun (x, y) -> Printf.printf "(%d, %d) " x y) l;
+        print_newline()
+    | Node ((x1, y1), (x2, y2), children) ->
+        print_string prefix;
+        Printf.printf "Node [%d-%d, %d-%d]: " x1 x2 y1 y2;
+        print_newline();
+        Array.iter (Array.iter (fun q' -> print_qtree q' ("  "^prefix))) children
+
+
 
 (* return true if any point of q is strictly inside rectangle p1 p2 *)
-let rec insides (q: qt) (p1: pt) (p2: pt) : bool =
-    match q with
-    | Leaf(((xa, ya) as a), ((xb, yb) as b), n, l) ->
-        if not (soft_intersect p1 p2 a || soft_intersect p1 p2 b || soft_intersect a b p1 || soft_intersect a b p2)
-        then false
-        else List.exists (intersect p1 p2) l
-    | Node(((xa, ya) as a), ((xb, yb) as b), children) ->
-        if not (soft_intersect p1 p2 a || soft_intersect p1 p2 b || soft_intersect a b p1 || soft_intersect a b p2)
-        then false
-        else Array.exists (Array.exists (fun q' -> insides q' p1 p2)) children
+let insides q p1 p2 =
+    let call_count = ref 0 in
+    let rec _insides (q: qt) (p1: pt) (p2: pt) : bool =
+        match q with
+        | Leaf(((xa, ya) as a), ((xb, yb) as b), n, l) ->
+            if not (soft_intersect p1 p2 a || soft_intersect p1 p2 b || soft_intersect a b p1 || soft_intersect a b p2)
+            then false
+            else begin
+                incr call_count;
+                List.exists (intersect p1 p2) l
+            end
+        | Node(((xa, ya) as a), ((xb, yb) as b), children) ->
+            if not (soft_intersect p1 p2 a || soft_intersect p1 p2 b || soft_intersect a b p1 || soft_intersect a b p2)
+            then false
+            else Array.exists (Array.exists (fun q' -> _insides q' p1 p2)) children
+    in 
+    let res = _insides q p1 p2 in
+    (* Printf.printf "Call to insides touched %d leaves" !call_count; print_newline(); *)
+    res
 
 let rec find_rect (seqs: (pt*pt) list) (pairs: (int*pt*pt) list) (qtree: qt) : int =
     match pairs with 
@@ -175,6 +217,7 @@ let rec find_rect (seqs: (pt*pt) list) (pairs: (int*pt*pt) list) (qtree: qt) : i
     let x2 = max (fst p1) (fst p2) in
     let y1 = min (snd p1) (snd p2) in
     let y2 = max (snd p1) (snd p2) in
+    (* Printf.printf "Testing: %d-%d %d-%d" x1 x2 y1 y2; print_newline(); *)
     if insides qtree (x1, y1) (x2, y2) then find_rect seqs q qtree else
     if
         List.exists (fun (p3, p4) ->
@@ -204,6 +247,8 @@ let day_9 (data: string list) =
     let maxy = List.fold_left max (List.hd ys) ys in
 
     let qtree = List.fold_left insert (Leaf((minx, miny), (maxx, maxy), 0, [])) pts in
+    (* Printf.printf "Done building qtree of height %d with %d leaves" (height qtree) (leaves qtree); print_newline(); *)
+    (* print_qtree qtree ""; *)
     let seqs = list_seqs pts in 
     find_rect seqs pairs qtree
     (* in pts, seqs, pairs *)
