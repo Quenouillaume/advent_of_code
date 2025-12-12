@@ -61,7 +61,6 @@ let count_paths (adjs: int list array) (s: int) (t: int) (required: int list) : 
     Printf.printf "%d %d" t n ; print_newline();
     paths.(t).(0) <- 1;
     let rec mem_path u k = 
-        Printf.printf "%d" u; print_newline();
         if paths.(u).(k) < 0 then begin
             if List.mem u required then
                 paths.(u).(k) <- List.fold_left (+) 0 (List.map (Fun.flip mem_path (k-1)) adjs.(u))
